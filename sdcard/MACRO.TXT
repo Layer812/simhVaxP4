@@ -1,0 +1,5 @@
+TERM=vt100; export TERM
+TERMCAP='vt100|vt:co#80:li#26:am:bs:cl=\E[H\E[2J:cm=\E[%i%d;%dH:ce=\E[K:cd=\E[J:up=\E[A:do=^J:nd=\E[C:ho=\E[H:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:'; export TERMCAP
+stty erase '^?' crt crterase rows 26 columns 80
+stty 9600
+EXINIT='set window=25'; export EXINIT
