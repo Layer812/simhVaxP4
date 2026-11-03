@@ -1,0 +1,55 @@
+echo SIMHP4_AUTO_QE0_BEGIN
+cat > /tmp/simhp4_qe0_bootinstall.sh <<'SIMHP4_INSTALL_EOF'
+#!/bin/sh
+# Automatic first boot inside the 4.3BSD root shell. No login change.
+PATH=/bin:/etc:/usr/bin:/usr/ucb
+export PATH
+umask 022
+mount -a >/dev/null 2>&1
+if [ ! -s /etc/netstart ] || [ ! -s /etc/rc ]; then
+  echo 'STOP: /etc/netstart or /etc/rc missing'
+  exit 1
+fi
+if grep SIMHP4_QE0_PERSISTENT /etc/netstart >/dev/null 2>&1; then
+  exit 0
+fi
+# Fresh installation only: never overwrite an existing saved original.
+if [ -f /etc/netstart.simhp4_original ]; then
+  echo 'STOP: existing netstart.simhp4_original needs inspection'
+  exit 1
+fi
+# Do not change disk files until the guest kernel confirms qe0 exists.
+ifconfig qe0 inet 10.88.0.2 netmask 255.255.255.0 up || exit 1
+# Stage a wrapper before modifying /etc/netstart; preserve the original.
+cat > /etc/netstart.simhp4_new <<'SIMHP4_NET_EOF'
+#!/bin/sh
+# SIMHP4_QE0_PERSISTENT; preserve BSD original network startup.
+/bin/sh /etc/netstart.simhp4_original "$@"
+/etc/ifconfig qe0 inet 10.88.0.2 netmask 255.255.255.0 up
+/etc/route delete default >/dev/null 2>&1
+/etc/route add default 10.88.0.1 1
+SIMHP4_NET_EOF
+if [ ! -s /etc/netstart.simhp4_new ]; then
+  echo 'STOP: cannot stage netstart'
+  exit 1
+fi
+chmod 755 /etc/netstart.simhp4_new || exit 1
+mv /etc/netstart /etc/netstart.simhp4_original || exit 1
+if mv /etc/netstart.simhp4_new /etc/netstart; then :; else
+  mv /etc/netstart.simhp4_original /etc/netstart
+  echo 'STOP: cannot install netstart'
+  exit 1
+fi
+if [ ! -s /etc/resolv.conf ]; then
+  echo 'nameserver 1.1.1.1' > /etc/resolv.conf
+fi
+# Apply now too (normal rc/netstart will re-apply during multiuser boot).
+/etc/route delete default >/dev/null 2>&1
+/etc/route add default 10.88.0.1 1 >/dev/null 2>&1
+exit 0
+SIMHP4_INSTALL_EOF
+if /bin/sh /tmp/simhp4_qe0_bootinstall.sh; then
+  echo SIMHP4_AUTO_QE0_PASS
+else
+  echo SIMHP4_AUTO_QE0_STOP
+fi
