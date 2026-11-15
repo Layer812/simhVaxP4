@@ -61,7 +61,7 @@ def publish_build_log(log: Path, *, failed: bool) -> None:
     access, image writes, flashing, disk-image access or git publication.
     """
     try:
-        report_dir = Path(os.environ.get('SIMHP4_BUILD_REPORT_DIR', r'F:\\build\\tmp'))
+        report_dir = Path(os.environ.get('SIMHP4_BUILD_REPORT_DIR', r'F:\build\tmp'))
         report_dir.mkdir(parents=True, exist_ok=True)
         target = report_dir / 'SIMHP4_R80_FIX28_LAST_BUILD.log'
         shutil.copyfile(log, target)
