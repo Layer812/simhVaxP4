@@ -3,10 +3,21 @@ setlocal EnableExtensions
 rem Publish SHA-verified original sources to the R80 Git development branch,
 rem fetch a clean checkout from Git and compile. Never run flash or esptool.
 set "HERE=%~dp0"
-call "%HERE%PUBLISH_SOURCE_FROM_LOCAL.cmd"
+rem The first source import is intentionally one-time. If the complete
+rem full_project source manifest is already COMMITTED in this branch, do not
+rem attempt to import again: clone it from GitHub and build directly.
+rem git cat-file checks the committed tree, not an untracked local folder.
+git -C "%HERE%..\.." cat-file -e "HEAD:firmware/r80_fix28/full_project/SOURCE_IMPORT_MANIFEST.json" >nul 2>&1
 if errorlevel 1 (
- echo STOP: Source publication did not pass. Native build not attempted.
- exit /b 4
+ echo R80 complete source is not committed yet. Starting one-time SHA-verified import.
+ call "%HERE%PUBLISH_SOURCE_FROM_LOCAL.cmd"
+ if errorlevel 1 (
+  echo STOP: Source publication did not pass. Native build not attempted.
+  exit /b 4
+ )
+) else (
+ echo PASS: R80 complete source is already committed. Skipping one-time import.
+ echo The following build uses a fresh clone from GitHub, never this local tree.
 )
 set "BASE=F:\build\tmp"
 if not exist "%BASE%" (
