@@ -1,0 +1,12 @@
+﻿COMMAND: C:\Users\fooba\.espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin\riscv32-esp-elf-size.exe 
+
+riscv32-esp-elf-size.exe : C:\Users\fooba\.espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin\risc
+v32-esp-elf-size.exe: 'a.out': No such file
+発生場所 G:\simhP4\SIMHP4_V12D_COLLECT_LINK_RAM_EVIDENCE.ps1:94 文字:9
++         & $Exe @Args 2>&1 | Out-File -LiteralPath $OutputFile -Append ...
++         ~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\fooba\...': No such file:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+EXITCODE: 1
