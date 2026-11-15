@@ -1,0 +1,10 @@
+{
+  "status": "RECOVERED_FROM_SHA_PINNED_LOCAL_DONOR",
+  "original_manifest": "SOURCE_IMPORT_MANIFEST.json",
+  "recovered_source": {
+    "path": "components/M5Unified/src/utility/imu/BMI270_config.inl",
+    "sha256": "59c1d9d3c876fa332a298ca404024a9375d7a926bcac71a00d385e6d022fb142",
+    "bytes": 50510
+  },
+  "note": "Exact vendor source bytes; only R80 development branch. No flash, NVS or DSK."
+}
