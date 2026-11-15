@@ -10,6 +10,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +52,43 @@ def fail(message, code=2):
     print('STOP: ' + message)
     print('NO FLASH / NO COM9 / NO DSK WRITES')
     return code
+
+
+def publish_build_log(log: Path, *, failed: bool) -> None:
+    """Keep original build evidence outside the disposable staging directory.
+
+    Do not suppress the first compiler error. This function performs no serial
+    access, image writes, flashing, disk-image access or git publication.
+    """
+    try:
+        report_dir = Path(os.environ.get('SIMHP4_BUILD_REPORT_DIR', r'F:\\build\\tmp'))
+        report_dir.mkdir(parents=True, exist_ok=True)
+        target = report_dir / 'SIMHP4_R80_FIX28_LAST_BUILD.log'
+        shutil.copyfile(log, target)
+        print('BUILD LOG SAVED: ' + str(target), flush=True)
+    except OSError as exc:
+        print('BUILD LOG COPY FAILED: ' + str(exc), flush=True)
+        print('BUILD LOG STILL AT: ' + str(log), flush=True)
+    if not failed:
+        return
+    try:
+        lines = log.read_text('utf-8', errors='replace').splitlines()
+        keys = re.compile(r'error:|fatal error:|CMake Error|undefined reference|FAILED:|ninja: error:|No such file or directory|Traceback|build stopped', re.I)
+        hits = [(i, line) for i, line in enumerate(lines) if keys.search(line)]
+        print('FIRST BUILD FAILURE DETAILS (from real ESP-IDF log):', flush=True)
+        if hits:
+            for i, _ in hits[:8]:
+                lo, hi = max(0, i - 2), min(len(lines), i + 4)
+                for line in lines[lo:hi]:
+                    print(line[:1200], flush=True)
+                print('---', flush=True)
+        else:
+            print('(No common compiler-error pattern; showing log tail.)', flush=True)
+            for line in lines[-80:]:
+                print(line[:1200], flush=True)
+    except OSError as exc:
+        print('LOG READ FAILED: ' + str(exc), flush=True)
+
 
 def main():
     if not BASE_FILE.is_file() or not PKG_FILE.is_file():
@@ -107,6 +145,7 @@ def main():
         with log.open('w', encoding='utf-8') as out:
             result = subprocess.run(run, cwd=stage / 'project', stdout=out,
                                     stderr=subprocess.STDOUT, check=False)
+        publish_build_log(log, failed=(result.returncode != 0))
         if result.returncode != 0:
             print('BUILD FAILED; log: ' + str(log))
             return fail('Native compilation returned ' + str(result.returncode))
