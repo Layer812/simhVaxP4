@@ -43,3 +43,15 @@ These are development-source artifacts recovered from the user's submitted packa
 For the exact source-publication workflow, see [SOURCE_IMPORT_GUIDE.md](SOURCE_IMPORT_GUIDE.md). The new [import_full_source.py](import_full_source.py) does **not** manufacture missing custom VAX files: it checks the historical `F:\build\tmp\s94` source stage against seven exact SHA-256 baselines, screens out binary media and apparent credentials, and may push a complete original source tree only to this development branch. The [PUBLISH_AND_BUILD_FROM_GIT.cmd](PUBLISH_AND_BUILD_FROM_GIT.cmd) path clones a **second clean Git checkout** and runs build-only from that checkout after successful source import.
 
 **The exact local source stage has now been published and its Git manifest checked.** On repeated runs, `PUBLISH_AND_BUILD_FROM_GIT.cmd` skips the one-time importer if the import manifest is already committed; it performs a fresh Git clone then compiles. Native-build PASS and hardware PASS have not been claimed.
+
+
+## FIX28 native compile failure — evidence required (2026-11-16)
+
+The user's **actual Git-only build** reached `idf.py -B ...\\project\\build build` under ESP-IDF 5.5.4 / Python 3.14.2 but exited with code 2. The complete log is left at:
+`C:\\Users\\fooba\\AppData\\Local\\Temp\\simhvaxp4_fix28_build_kw78ogvz\\BUILD.log`.
+
+**Do not guess the compiler fault from return code 2 or trigger another full build just to get diagnostics.** The current failure requires the original `BUILD.log`, e.g. one read-only command:
+```bat
+powershell -NoProfile -Command "Get-Content 'C:\Users\fooba\AppData\Local\Temp\simhvaxp4_fix28_build_kw78ogvz\BUILD.log' -Tail 100"
+```
+The Git build driver now prints representative **first error** passages and copies the complete log to `F:\\build\\tmp\\SIMHP4_R80_FIX28_LAST_BUILD.log` on subsequent runs, without modifying the source, invoking COM9 or flashing. **Native build is still FAILED; no physical acceptance.**
