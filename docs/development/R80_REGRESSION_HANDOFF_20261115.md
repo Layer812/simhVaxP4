@@ -72,3 +72,20 @@ Use the ELF whose SHA matches each *specific* UART crash build. Symbolicate host
 ### Evidence limitation
 
 These are historical UART logs and publicly available upstream reference code, not the exact local FIX22 / FIX27R1 source snapshots. No actual original/work DSK bytes, completed full-disk comparison, matching ESP-IDF ELF, or newly repaired firmware have been verified in this handoff.
+
+
+## Uploaded offline audit result — 2026-11-15 19:49:41 (local)
+
+The user's read-only audit report archive was inspected, including `AUDIT_SUMMARY.md`, `source_comparison.json`, `source_unified_diff.txt`, `artifact_inventory.json`, and `source_zip_inventory.json`. The ZIP passed integrity testing.
+
+**Verified from report:**
+- Exact FIX22 and FIX27R1 source ZIPs were located and hashed. Both contain 13 normalized source-related entries, 12 matching paths; the 3 differing common paths are `simhp4_release_ui/package_sha256.json`, `simhp4_release_ui/run_release_ui.py`, and `source/v13_main.cpp`. These are packaging/staging differences, not a complete compiled-project object comparison.
+- The FIX27R1 launcher extends the staging patcher to change *compiled* `third_party/simh_vax630_87eb/scp.c` and `project/main/simhp4_vax630_io_esp_r14e.c`, adding QBA skip/flush/sequential-file guards and address-range checks at the entry to `qbmap_wr` and `qbmap_rd`.
+- `v13_main.cpp` adds `extern "C" UNIT qba_unit` and `memset(&qba_unit, 0, sizeof(qba_unit))` immediately before the first guest run, logging prior flags/fileref.
+- The code stages a workaround for suspected QBA metadata overwrite. The report **does not prove** that the patched code corresponds byte-for-byte to the flashed APP, or that the cause of the overwrite was resolved.
+- The artifact inventory enumerated 2,970 paths but reached its 5,001-directory limit. Its absence of particular files therefore is **not evidence those files do not exist**.
+- **No actual DSK comparison was performed:** `QUASDISK.DSK` and `QUASWORK.DSK` were not resolved as one unambiguous readable pair. No DSK hash, changed-LBA listing, sector dumps, or filesystem integrity result exists.
+
+**Additional source-level finding:** pinned upstream Open SIMH `VAX/vax630_io.c` defines `qbmap_rd()` with an unchecked `qb_map[idx]` access and `qbmap_wr()` with only `idx < QBNMAPR` prior to dereferencing. If the computed index can be negative, this is an out-of-bounds risk. See upstream commit `87eb7d5e96f9ce0ee6ac183e20160e5c486b0712`, `VAX/vax630_io.c` lines 445–466. FIX27R1's staging script attempts to add lower and upper physical-address range guards. Whether a negative index actually occurred in the user's image and whether this explains QBA corruption is **not proven**; inspect the locally compiled translation unit and ELF with corresponding checksums.
+
+**Next safe evidence step:** (1) directly inspect actual FIX22/FIX27R1 source package contents and matching ELF/BIN, especially the compiled guards and firmware crash backtrace; (2) compare all sectors of the two DSK files only after confirming both paths and exclusive/unmounted access. No auto repair/re-init/copy/flash.
