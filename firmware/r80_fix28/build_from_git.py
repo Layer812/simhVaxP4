@@ -117,6 +117,21 @@ def main():
     idf_py = idf_root / 'tools' / 'idf.py'
     if not idf_py.is_file():
         return fail('ESP-IDF 5.5.4 Python build tool not found: ' + str(idf_py))
+    # The IDF component manager default cache path on Windows is excessively
+    # long for esp_hosted 3.0.9's nested examples/ tree. On the owner's machine
+    # the unpack failed with FileNotFoundError before CMake configured the build.
+    # IDF_COMPONENT_CACHE_PATH is the documented environment override; isolate
+    # this R80 cache under a short path on the existing F: development volume.
+    # No Windows registry changes, system cache cleanup, or library replacement.
+    component_cache = Path(r'F:\build\tmp\r80cm')
+    if sys.platform == 'win32':
+        if not Path('F:/build/tmp').is_dir():
+            return fail('Required F:/build/tmp source development volume is missing')
+        component_cache.mkdir(parents=True, exist_ok=True)
+        print('ESP-IDF component cache: ' + str(component_cache), flush=True)
+    build_env = os.environ.copy()
+    if sys.platform == 'win32':
+        build_env['IDF_COMPONENT_CACHE_PATH'] = str(component_cache)
     stage = Path(tempfile.mkdtemp(prefix='simhvaxp4_fix28_build_'))
     print('Build staging (isolated): ' + str(stage))
     try:
@@ -143,8 +158,8 @@ def main():
         log = stage / 'BUILD.log'
         print('ESP-IDF build only: ' + ' '.join(run))
         with log.open('w', encoding='utf-8') as out:
-            result = subprocess.run(run, cwd=stage / 'project', stdout=out,
-                                    stderr=subprocess.STDOUT, check=False)
+            result = subprocess.run(run, cwd=stage / 'project', env=build_env,
+                                    stdout=out, stderr=subprocess.STDOUT, check=False)
         publish_build_log(log, failed=(result.returncode != 0))
         if result.returncode != 0:
             print('BUILD FAILED; log: ' + str(log))
