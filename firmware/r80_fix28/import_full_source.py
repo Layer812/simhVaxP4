@@ -27,8 +27,13 @@ EXCLUDED_DIRS = {'build', '.git', '.pio', '__pycache__', '.cache', '.venv', 'ven
 EXCLUDED_SUFFIXES = {'.dsk', '.xdf', '.img', '.adf', '.hdf', '.vhd', '.qcow2', '.zip', '.7z', '.rar', '.bak', '.elf', '.bin', '.hex', '.map', '.o', '.obj', '.a', '.so', '.dll', '.exe', '.pdb', '.db', '.sqlite', '.nvs', '.pem', '.key', '.p12', '.pfx', '.der', '.crt', '.cer', '.log', '.pyc', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.wav', '.mp3', '.ttf', '.otf', '.woff', '.woff2', '.dat'}
 SOURCE_SUFFIXES = {'.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hxx', '.s', '.asm', '.in', '.inc', '.i', '.cmake', '.txt', '.md', '.rst', '.py', '.yml', '.yaml', '.json', '.csv', '.ld', '.def', '.cfg', '.ps1', '.cmd', '.bat', '.sh', '.kconfig', '.mk', '.diff', '.patch'}
 SOURCE_FILENAMES = {'CMakeLists.txt', 'Kconfig', 'Kconfig.projbuild', 'Makefile', 'LICENSE', 'NOTICE', 'COPYING', '.gitignore', '.gitattributes', '.gitmodules', 'sdkconfig', 'sdkconfig.defaults', 'partitions.csv', 'component.mk'}
+# Keep the conservative limit for first-party sources. M5GFX's upstream
+# Japanese font is distributed as a very large C translation unit; it must be
+# copied byte-for-byte, not silently omitted or replaced by a different font.
+# GitHub rejects individual files above 100 MiB; stay below that hard ceiling.
 MAX_ITEM = 8 * 1024 * 1024
-MAX_TOTAL = 120 * 1024 * 1024
+MAX_M5GFX_ITEM = 96 * 1024 * 1024
+MAX_TOTAL = 640 * 1024 * 1024
 MAX_FILES = 12000
 
 # Conservative public-repository secrets scanning. Refuse to push if uncertain.
@@ -112,8 +117,20 @@ def check_tree_and_stage(root: Path, stage: Path) -> tuple[list[dict], list[dict
                     excluded.append({'path': rel_text, 'reason': 'unrecognized extension'})
                     continue
                 size = old.stat().st_size
+                is_m5gfx_source = (
+                    rel.parts[:2] == ('components', 'M5GFX')
+                    and old.suffix.lower() in SOURCE_SUFFIXES
+                )
+                item_limit = MAX_M5GFX_ITEM if is_m5gfx_source else MAX_ITEM
+                if size > item_limit:
+                    raise RuntimeError(
+                        f'file exceeds {item_limit // (1024 * 1024)} MiB source review limit: {rel_text}'
+                    )
+                # Audit oversized vendor source exactly as any other source.
+                # Size exceptions never bypass the NUL/credentials checks or
+                # full SHA-256 manifest; no content is dropped or truncated.
                 if size > MAX_ITEM:
-                    raise RuntimeError(f'file exceeds 8 MiB review limit: {rel_text}')
+                    print(f'ALLOW LARGE M5GFX SOURCE: {rel_text} ({size} bytes; exact copy)')
                 raw = old.read_bytes()
                 if b'\0' in raw:
                     raise RuntimeError(f'binary content in source file: {rel_text}')
