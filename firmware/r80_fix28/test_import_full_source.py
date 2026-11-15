@@ -66,6 +66,20 @@ def tests():
         assert any(x['path'].endswith('QUASWORK.DSK') for x in manifest['excluded'])
         assert invoke(unit, donor).returncode == 3, 'existing full_project overwritten'
         print('PASS: baseline match, SHA mismatch fail-closed, dry-run, one-time copy, DSK/BIN exclusion, no-overwrite')
+    with tempfile.TemporaryDirectory(prefix='simhp4_test_m5gfx_font_') as d:
+        unit, donor = fake(Path(d))
+        font = donor / 'components' / 'M5GFX' / 'src' / 'lgfx' / 'Fonts' / 'IPA' / 'lgfx_font_japan.c'
+        font.parent.mkdir(parents=True)
+        font.write_bytes(b'/* upstream Japanese font source */\n' + b' ' * (8 * 1024 * 1024 + 32))
+        good = invoke(unit, donor, '--dry-run')
+        assert good.returncode == 0 and 'ALLOW LARGE M5GFX SOURCE' in good.stdout, good.stdout
+        assert not (unit / 'full_project').exists(), 'dry-run changed checkout'
+        bad = donor / 'project' / 'main' / 'oversize.c'
+        bad.write_bytes(b'/* unreviewed large application source */\n' + b' ' * (8 * 1024 * 1024 + 32))
+        rejected = invoke(unit, donor, '--dry-run')
+        assert rejected.returncode == 3 and 'file exceeds 8 MiB source review limit' in rejected.stdout, rejected.stdout
+        assert not (unit / 'full_project').exists()
+        print('PASS: M5GFX font >8MiB admitted intact; oversized first-party source still blocked')
     with tempfile.TemporaryDirectory(prefix='simhp4_test_secrets_') as d:
         unit, donor = fake(Path(d), secret=True)
         x = invoke(unit, donor)
