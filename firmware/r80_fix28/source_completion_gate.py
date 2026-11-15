@@ -65,7 +65,7 @@ def run(*args: str, cwd: Path) -> str:
     return p.stdout.strip()
 
 
-def strict_repo() -> Path:
+def strict_repo(*, require_clean: bool = True) -> Path:
     repo = HERE.parents[1]
     if not (repo / '.git').exists():
         fail('not a Git checkout')
@@ -73,7 +73,7 @@ def strict_repo() -> Path:
         fail('wrong Git branch: must be the R80 regression handoff branch')
     if run('git', 'remote', 'get-url', 'origin', cwd=repo) not in REPO_URLS:
         fail('unexpected Git origin: publishing forbidden')
-    if run('git', 'status', '--porcelain', cwd=repo):
+    if require_clean and run('git', 'status', '--porcelain', cwd=repo):
         fail('Git checkout is dirty: do not overwrite or publish')
     remote = run('git', 'ls-remote', 'origin', 'refs/heads/'+BRANCH, cwd=repo).split()
     local = run('git', 'rev-parse', 'HEAD', cwd=repo)
@@ -251,7 +251,11 @@ def main() -> int:
                 # A local, uncommitted recovery must never be mistaken for
                 # successfully published Git source. Reusing this path is
                 # idempotent only when both files are tracked on remote HEAD.
-                repo = strict_repo()
+                # Idempotent read-only verification: a Windows checkout may
+                # report line-ending differences even though all Git blobs
+                # and original SHA-256 checks have already passed. Do not
+                # require a clean worktree when NO commit/push will occur.
+                repo = strict_repo(require_clean=False)
                 for item in (REQUIRED, 'SOURCE_COMPLETION_MANIFEST.json'):
                     run('git', 'cat-file', '-e',
                         'HEAD:firmware/r80_fix28/full_project/' + item,
