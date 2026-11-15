@@ -1,5 +1,5 @@
 {
-  "status": "INCOMPLETE_SOURCE_NO_NATIVE_BUILD",
+  "status": "FULL_SOURCE_PUBLISHED_NATIVE_BUILD_PENDING",
   "origin": "SIMHP4_R80_RC14_FIX28_SCB_PROVENANCE_BUILD_ONLY.zip; source candidate derived from user-supplied FIX27R1 and linked to FIX22/FIX24R1 forensic ELFs",
   "source_files": {
     "simhp4_a164_keyboard.c": "e738b8c797f7637a1f77005f056a03e6b0fa461a8a613bdb119eea4c7a2f8d9d",
@@ -18,7 +18,10 @@
     "PACKAGE_SHA256.json": "bfcba08db009df1c466d1730b03b756ab42f7a803e7b0ddac51143d5cc7b7fed"
   },
   "upstream_open_simh_commit": "87eb7d5e96f9ce0ee6ac183e20160e5c486b0712",
-  "required_missing_custom_sources": [
+  "required_missing_custom_sources": [],
+  "no_flash": true,
+  "no_dsk": true,
+  "historically_missing_custom_sources": [
     "full_project/project/CMakeLists.txt",
     "full_project/project/main/CMakeLists.txt",
     "full_project/project/main/simhp4_vax630_io_esp_r14e.c",
@@ -33,6 +36,20 @@
     "full_project/third_party/simh_vax630_87eb/VAX/vax_cpu1.c",
     "full_project/components"
   ],
-  "no_flash": true,
-  "no_dsk": true
+  "full_project_import": {
+    "manifest": "full_project/SOURCE_IMPORT_MANIFEST.json",
+    "file_count": 1777,
+    "source_bytes": 228831654,
+    "provenance": "SHA-256 pinned R80 donor import recorded in Git development branch",
+    "verified_files": [
+      "project/CMakeLists.txt",
+      "project/main/CMakeLists.txt",
+      "project/main/simhp4_vax630_io_esp_r14e.c",
+      "third_party/simh_vax630_87eb/scp.c",
+      "third_party/simh_vax630_87eb/VAX/vax_cpu1.c",
+      "components/M5GFX/src/lgfx/Fonts/IPA/lgfx_font_japan.c"
+    ],
+    "native_esp_idf_build": "NOT_YET_CONFIRMED",
+    "physical_boot": "NOT_TESTED"
+  }
 }
