@@ -132,7 +132,31 @@ def main():
     build_env = os.environ.copy()
     if sys.platform == 'win32':
         build_env['IDF_COMPONENT_CACHE_PATH'] = str(component_cache)
-    stage = Path(tempfile.mkdtemp(prefix='simhvaxp4_fix28_build_'))
+    # Component Manager first unpacks hosted in the cache, then copies its
+    # entire examples/ tree into project/managed_components.  The first FIX28
+    # retry shortened the cache, but the default %TEMP% project destination
+    # still measured 265 chars for a real esp_hosted 3.0.9 file and failed
+    # with WinError 3. Shorten the *destination* as well (no global settings).
+    if sys.platform == 'win32':
+        stage_parent = Path(r'F:\build\tmp')
+        if not stage_parent.is_dir():
+            return fail('Short F: build-stage parent is missing: ' + str(stage_parent))
+        stage = Path(tempfile.mkdtemp(prefix='b28_', dir=str(stage_parent)))
+        # Check the exact previous failure path before invoking native build.
+        # Leave margin below Win32 MAX_PATH for intermediate extraction.
+        previous_failed_subpath = Path(
+            'project/managed_components/espressif__esp_hosted/'
+            'examples/power_save/host+cp/'
+            'network_split__host_deep_sleep_cp_light_sleep/'
+            'cp/components/esp_hosted_examples_common/include/'
+            'esp_hosted_examples_common.h'
+        )
+        previous_failed_target = stage / previous_failed_subpath
+        print('ESP Hosted nested target length: ' + str(len(str(previous_failed_target))), flush=True)
+        if len(str(previous_failed_target)) >= 240:
+            return fail('ESP Hosted managed-components target still too long')
+    else:
+        stage = Path(tempfile.mkdtemp(prefix='simhvaxp4_fix28_build_'))
     print('Build staging (isolated): ' + str(stage))
     try:
         for part in ('project', 'components', 'third_party'):
