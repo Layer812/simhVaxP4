@@ -81,3 +81,26 @@ The build-only driver now also creates a uniquely named, isolated SHORT STAGING 
 - Existing short component cache file: **224 characters**
 
 No VAX/QBA, M5GFX/M5Unified, BSD, LCD, Wi-Fi, CMake or flash/disk source was changed by this remediation. No Windows long-path registry changes, removal of existing caches, or modification to the separate TAb500_Improve project. Actual ESP-IDF retest and physical acceptance remain pending.
+
+
+## FIX28 source completeness gate before any further build (2026-11-16)
+
+The third real Windows build passed the prior ESP Hosted cache/staging path problems and compiled to **step 1106/1306**, but then stopped while compiling \`M5Unified/src/utility/imu/BMI270_Class.cpp\`:
+
+    fatal error: BMI270_config.inl: No such file or directory
+
+This is not a VAX simulator regression. The historical source importer silently excluded the exact vendor \`.inl\` file, and the committed original \`full_project/SOURCE_IMPORT_MANIFEST.json\` confirms this. All **833** excluded-file records were reviewed by extension: the **only** excluded C/C++ compile-input extension (C/C++/headers/inc/inl/etc.) is \`components/M5Unified/src/utility/imu/BMI270_config.inl\`. The others are largely old backups, unrelated simulator examples, binary media and metadata. Do not replace M5Unified with a different version or create substitute IMU arrays.
+
+**New Git-first fix (published, native retest not yet done):**
+- \`source_completion_gate.py --publish\` first SHA-256 checks all **1,777 original Git source files**, validates original seven source baselines and manifest, finds the unique exact matching historical donor, and copies **only the exact omitted** \`BMI270_config.inl\` into the existing development branch, SHA-256 records its bytes in \`full_project/SOURCE_COMPLETION_MANIFEST.json\`, commits and pushes. It does not replace any existing source.
+- \`PUBLISH_AND_BUILD_FROM_GIT.cmd\` invokes this source gate **before** cloning or compiling. On a partial source/error it stops; successful one-time import is idempotent.
+- The independent \`build_from_git.py\` also invokes \`source_completion_gate.py --verify\` **before** any source copying or ESP-IDF/CMake call. It verifies every original source file's hash and exact recovered source bytes, so direct Git-only builds cannot proceed with missing files.
+- Host fixture unit tests pass for pristine source, exact donor-byte publication, modified original source rejection, modified recovered source rejection, and an extra excluded compile-input extension rejection. The two gate/test Git files were verified byte-exact by Git blob hashes.
+
+The script cannot read the user's F:\ drive from ChatGPT. On the user's machine use the existing Git checkout **once** for the source repair and clean Git build:
+
+    git -C F:\build\tmp\simhVaxP4_R80_GIT_SOURCE pull --ff-only && call F:\build\tmp\simhVaxP4_R80_GIT_SOURCE\firmware\r80_fix28\PUBLISH_AND_BUILD_FROM_GIT.cmd
+
+This command first verifies/repairs the source; **native build occurs only if audit + Git source publication succeed**. It then clones a new clean Git tree and re-verifies before compiling. Do not run the direct BUILD_FROM_GIT.cmd against the older incomplete checkout before this once-only source publication.
+
+Still **NO FLASH, NO COM9, NO DSK/NVS changes, main unchanged**, no native compilation or hardware PASS claimed.
