@@ -104,3 +104,18 @@ The script cannot read the user's F:\ drive from ChatGPT. On the user's machine 
 This command first verifies/repairs the source; **native build occurs only if audit + Git source publication succeed**. It then clones a new clean Git tree and re-verifies before compiling. Do not run the direct BUILD_FROM_GIT.cmd against the older incomplete checkout before this once-only source publication.
 
 Still **NO FLASH, NO COM9, NO DSK/NVS changes, main unchanged**, no native compilation or hardware PASS claimed.
+
+
+## 2026-11-16 — Git vendor .gitattributes checkout false positive
+
+After the omitted BMI270_config.inl (50,510 bytes; SHA-256 59c1d9d3c876fa332a298ca404024a9375d7a926bcac71a00d385e6d022fb142) was **successfully copied byte-for-byte from the pinned donor, committed and pushed** as dba0d27, a fresh Git clone correctly began SHA verification but stopped at third_party/simh_vax630_87eb/.gitattributes.
+
+Root cause: the nested Open SIMH .gitattributes explicitly assigns .gitattributes text=auto (and *.cmake text=auto, .gitignore text=auto), overriding the outer -text rule on Windows. Git's canonical upstream .gitattributes has **272 LF bytes**, whose SHA-256 exactly matches the source-import manifest: 14e8b14c5ce5b571dceeb2015441cd0df76518856a10c1084088e71d55f07d2c. Windows checkout can contain CRLF and therefore fail a naive raw-working-file byte hash.
+
+**Strict remediation:** source_completion_gate.py still checks all 1,777 pinned original files. For any local size/SHA mismatch it accepts the file **only if** (a) CRLF→LF reproduces the original byte count and SHA-256, (b) committed Git HEAD:path blob has that exact original count and SHA-256, and (c) the working file is an exact LF→CRLF transformation of that committed blob. Actual source edits and altered Git blobs fail. Read-only repeat publication no longer treats EOL-only Git status as incomplete; initial publication still needs a clean checkout. Host-side simulated Git test passed for valid CRLF, altered checkout and altered committed Git blob.
+
+**Status:** original R80 source and exact BMI270 .inl are now on the development branch; the source auditor fix is published but an actual Windows native compile is still pending. NO FLASH / NO DSK / NO NVS / NO COM9.
+
+Use the existing Git checkout directly, without repeating donor upload or fresh clone:
+
+    git -C F:\build\tmp\simhVaxP4_R80_GIT_SOURCE pull --ff-only && call F:\build\tmp\simhVaxP4_R80_GIT_SOURCE\firmware\r80_fix28\BUILD_FROM_GIT.cmd
