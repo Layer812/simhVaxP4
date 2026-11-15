@@ -2,11 +2,11 @@
 
 ## Status
 
-The upstream repository currently holds the exact FIX28 overlay and its guarded builder. The **full ESP-IDF base is not in Git yet**. The only known potential copy is the SHA-pinned, completed historical base stage at `F:\build\tmp\s94` on the user's Windows machine. ChatGPT cannot read that drive directly.
+**The complete ESP-IDF base is now in Git** under `full_project/` (1,777 source files / 228,831,654 bytes). The recorded donor was SHA-pinned to the user's historical `F:\build\tmp\s94\20261031_010409_742208` stage. The one-time source publication is complete; a native ESP-IDF FIX28 build has not yet been demonstrated.
 
 ## One-time Git source import (development branch only)
 
-The repository includes these two scripts:
+The repository includes these two scripts. **They now detect a previously published, committed source tree and skip the initial import instead of failing on `full_project already exists`:**
 
 - `PUBLISH_SOURCE_FROM_LOCAL.cmd`: inspect the historical local donor, compare all **seven** original R80 files with `BASE_SOURCE_SHA256.json`, select a unique exact-match source stage, import `project`, `components` and `third_party` into Git, filter DSK/Flash binaries, screen for apparent credentials and push only to the development branch.
 - `PUBLISH_AND_BUILD_FROM_GIT.cmd`: run the same one-time import, clone a **new clean checkout from GitHub**, and invoke the **build-only** `BUILD_FROM_GIT.cmd` on the clean checkout. No `idf.py flash`, esptool, COM9 or SD operations.
@@ -19,7 +19,7 @@ git clone --single-branch --branch work/r80-regression-handoff-20261115 https://
 call F:\build\tmp\simhVaxP4_R80_GIT_SOURCE\firmware\r80_fix28\PUBLISH_AND_BUILD_FROM_GIT.cmd
 ```
 
-If an existing checkout is present, **do not overwrite it**: use its Git branch directly when clean and up-to-date.
+If an existing checkout is present, **do not overwrite it**. Use the `git pull --ff-only && call ...PUBLISH_AND_BUILD_FROM_GIT.cmd` command from the log-recovery section below; a successful previous source publication no longer needs the original donor.
 
 The repository is public. The import script fails closed on source hash mismatch, secret patterns, symbolic links and foreign Git remotes. This automated check is **not a guarantee that all private information is detectable**. Never add passwords, personal Wi-Fi configuration, SD images, NVS, device dumps, ROMs or generated firmware. Third-party copyrights and licenses must be maintained as in the original source tree.
 
