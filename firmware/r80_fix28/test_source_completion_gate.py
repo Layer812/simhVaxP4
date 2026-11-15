@@ -49,3 +49,50 @@ with tempfile.TemporaryDirectory() as d:
     gate.ORIGINAL.write_text(json.dumps(original))
     die_check(gate.audit_original,'unexpected excluded compile inputs')
     print('PASS: a second missing build-source extension blocks compilation')
+
+
+# Git's vendor-nested "text=auto" can turn an LF canonical blob into
+# CRLF in Windows' working tree. SHA-check the original committed bytes and
+# require EXACT checkout conversion; never accept arbitrary edited content.
+import subprocess
+
+def git_ok(repo, *args):
+    p = subprocess.run(['git', '-C', str(repo), *args], capture_output=True,
+                       text=True, check=False)
+    assert p.returncode == 0, (args, p.stderr)
+    return p.stdout
+
+with tempfile.TemporaryDirectory(prefix='simhp4_gate_git_eol_') as directory:
+    repo = Path(directory)
+    rel = 'third_party/simh_vax630_87eb/.gitattributes'
+    objrel = 'firmware/r80_fix28/full_project/' + rel
+    vendor = repo / objrel
+    vendor.parent.mkdir(parents=True)
+    canonical = (b'*.cmake text=auto\n.gitattributes text=auto\n'
+                 b'.gitignore text=auto\n')
+    vendor.write_bytes(canonical)
+    git_ok(repo, 'init', '-q')
+    git_ok(repo, 'config', 'user.email', 'test@example.invalid')
+    git_ok(repo, 'config', 'user.name', 'Test')
+    git_ok(repo, 'add', '-f', '--', objrel)
+    git_ok(repo, 'commit', '-qm', 'pinned upstream')
+    gate.HERE = repo / 'firmware' / 'r80_fix28'
+    record = {'path': rel, 'bytes': len(canonical),
+              'sha256': hashlib.sha256(canonical).hexdigest()}
+    vendor.write_bytes(canonical.replace(b'\n', b'\r\n'))
+    assert gate.verified_git_eol_checkout(vendor, rel, record)
+    print('PASS: original Git blob SHA-256 + exact LF->CRLF conversion accepted')
+    vendor.write_bytes(b'*.cmake text=auto\r\nUNTRUSTED text=auto\r\n'
+                       b'.gitignore text=auto\r\n')
+    assert not gate.verified_git_eol_checkout(vendor, rel, record)
+    vendor.write_bytes(canonical.replace(b'\n', b'\r\n'))
+    git_ok(repo, 'config', 'user.name', 'Test')
+    # A replaced Git blob must also fail, even when the working bytes look
+    # like the expected original after CRLF canonicalization.
+    vendor.write_bytes(b'*.cmake text=auto\n.gitattributes text=auto\n'
+                       b'changed text=auto\n')
+    git_ok(repo, 'add', '--', objrel)
+    git_ok(repo, 'commit', '-qm', 'intentional changed canonical blob')
+    vendor.write_bytes(canonical.replace(b'\n', b'\r\n'))
+    assert not gate.verified_git_eol_checkout(vendor, rel, record)
+    print('PASS: modified checkout and modified Git blob rejected')
