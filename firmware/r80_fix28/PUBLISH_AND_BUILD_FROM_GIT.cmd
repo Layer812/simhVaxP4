@@ -19,6 +19,14 @@ if errorlevel 1 (
  echo PASS: R80 complete source is already committed. Skipping one-time import.
  echo The following build uses a fresh clone from GitHub, never this local tree.
 )
+rem Before ANY fresh native build, audit 1,777 tracked source hashes and
+rem recover exactly the one excluded .inl from the SHA-verified historical
+rem donor. It is then committed to this Git branch. No version substitution.
+python -B "%HERE%source_completion_gate.py" --publish
+if errorlevel 1 (
+ echo STOP: Git source audit/recovery incomplete. Native build NOT attempted.
+ exit /b 4
+)
 set "BASE=F:\build\tmp"
 if not exist "%BASE%" (
  echo STOP: F:\build\tmp not available.
