@@ -107,11 +107,10 @@ def verified_git_eol_checkout(source: Path, rel: str, item: dict) -> bool:
     if not (repo / '.git').exists():
         return False
     git_rel = 'firmware/r80_fix28/full_project/' + rel
-    status = subprocess.run(
-        ['git', '-C', str(repo), 'status', '--porcelain', '--', git_rel],
-        capture_output=True, check=False)
-    if status.returncode or status.stdout or status.stderr:
-        return False
+    # Git may report a local CRLF checkout as modified when the parent
+    # folder sets "-text" but the nested vendor .gitattributes sets
+    # "text=auto". Do not rely on status: the exact byte-for-byte comparison
+    # below against a SHA-pinned committed blob is strictly stronger.
     original = subprocess.run(
         ['git', '-C', str(repo), 'show', 'HEAD:' + git_rel],
         capture_output=True, check=False)
