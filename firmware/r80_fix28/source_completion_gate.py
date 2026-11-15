@@ -89,6 +89,46 @@ def must_be_file(root: Path, rel: str) -> Path:
     return p
 
 
+def verified_git_eol_checkout(source: Path, rel: str, item: dict) -> bool:
+    """Accept ONLY a Git-proven LF -> CRLF checkout transformation.
+
+    A nested vendor .gitattributes may say text=auto, overriding the outer
+    "-text" rule. Windows checkout then changes LF bytes to CRLF despite
+    Git's canonical HEAD blob matching the SHA-256 of the original donor.
+    Never silently skip SHA checks or accept arbitrary normalized contents.
+    """
+    local = source.read_bytes()
+    if b'\r\n' not in local:
+        return False
+    candidate = local.replace(b'\r\n', b'\n')
+    if len(candidate) != item['bytes'] or hashlib.sha256(candidate).hexdigest() != item['sha256']:
+        return False
+    repo = HERE.parents[1]
+    if not (repo / '.git').exists():
+        return False
+    git_rel = 'firmware/r80_fix28/full_project/' + rel
+    status = subprocess.run(
+        ['git', '-C', str(repo), 'status', '--porcelain', '--', git_rel],
+        capture_output=True, check=False)
+    if status.returncode or status.stdout or status.stderr:
+        return False
+    original = subprocess.run(
+        ['git', '-C', str(repo), 'show', 'HEAD:' + git_rel],
+        capture_output=True, check=False)
+    if original.returncode or original.stderr:
+        return False
+    blob = original.stdout
+    # The original SHA-256 remains the acceptance criterion.  Checking the
+    # committed Git blob prevents accidental acceptance of a modified file.
+    if len(blob) != item['bytes'] or hashlib.sha256(blob).hexdigest() != item['sha256']:
+        return False
+    if b'\r\n' in blob or local != blob.replace(b'\n', b'\r\n'):
+        return False
+    print('PASS Git checkout-only CRLF conversion (original SHA-256 retained): ' + rel,
+          flush=True)
+    return True
+
+
 def audit_original() -> dict:
     manifest = json.loads(ORIGINAL.read_text(encoding='utf-8'))
     known = json.loads(BASE_SHA.read_text(encoding='utf-8'))
@@ -108,7 +148,8 @@ def audit_original() -> dict:
         seen.add(rel)
         f = must_be_file(FULL, rel)
         if f.stat().st_size != item['bytes'] or digest(f) != item['sha256']:
-            fail('Git source changed or incomplete: ' + rel)
+            if not verified_git_eol_checkout(f, rel, item):
+                fail('Git source changed or incomplete: ' + rel)
     for rel in MUST_EXIST:
         must_be_file(FULL, rel)
     skipped_inputs = sorted(item['path'] for item in exc
