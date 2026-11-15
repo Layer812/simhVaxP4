@@ -37,7 +37,8 @@ if not defined STAMP (
  echo STOP: Failed to choose unique clean Git build directory.
  exit /b 4
 )
-set "NEW=%BASE%\simhVaxP4_R80_FROM_GIT_%STAMP%"
+rem Short checkout root avoids introducing another Windows MAX_PATH issue.
+set "NEW=%BASE%\r80g_%STAMP%"
 if exist "%NEW%" (
  echo STOP: Destination exists. No checkout overwritten.
  exit /b 4
