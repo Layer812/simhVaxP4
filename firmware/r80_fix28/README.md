@@ -55,3 +55,14 @@ The user's **actual Git-only build** reached `idf.py -B ...\\project\\build buil
 powershell -NoProfile -Command "Get-Content 'C:\Users\fooba\AppData\Local\Temp\simhvaxp4_fix28_build_kw78ogvz\BUILD.log' -Tail 100"
 ```
 The Git build driver now prints representative **first error** passages and copies the complete log to `F:\\build\\tmp\\SIMHP4_R80_FIX28_LAST_BUILD.log` on subsequent runs, without modifying the source, invoking COM9 or flashing. **Native build is still FAILED; no physical acceptance.**
+
+
+## FIX28 first native build: ESP Component Manager long-path error (2026-11-16)
+
+User-supplied BUILD.log proves that CMake stopped during the dependency download/extraction for espressif/esp_hosted==3.0.9, BEFORE MicroVAX C/C++ compilation. The default Windows Component Manager cache rooted under C:\Users\fooba\AppData\Local\Espressif\ComponentManager\Cache\ was too long for a deeply nested esp_hosted examples file, causing Python zipfile.extract FileNotFoundError.
+
+The Git-only native-build driver now sets IDF_COMPONENT_CACHE_PATH=F:\build\tmp\r80cm in the CHILD idf.py process environment, after confirming the development volume exists. This environment override is officially supported by Espressif. No registry change, library deletion or emulator-source change; no Flash/COM9/DSK/NVS actions.
+
+The original build log has been preserved at C:\Users\fooba\AppData\Local\Temp\simhvaxp4_fix28_build_kw78ogvz\BUILD.log. The driver also prints the first real build error and retains a full copy at F:\build\tmp\SIMHP4_R80_FIX28_LAST_BUILD.log on subsequent runs.
+
+**Current state: Git source import PASS; ESP-IDF native build FAIL due to dependency extraction long path; corrected driver published but not yet run on Windows; hardware NOT tested.**
