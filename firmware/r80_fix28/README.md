@@ -36,3 +36,10 @@ This command first checks every published file against its recorded SHA-256 and 
 ### Provenance and license
 
 These are development-source artifacts recovered from the user's submitted packages; the candidate has **not** passed a native ESP-IDF build or physical regression acceptance. Third-party SIMH code is not republished as if it were original authoring; preserve its upstream copyright/license when eventually importing a verified port. Do not add BSD disk images, ROMs, passwords, NVS dumps, Flash/NVS backups, or credentials to Git. Keep the public root README's no-firmware-release status in force.
+
+
+## SHA-pinned import and clean Git build (new)
+
+For the exact source-publication workflow, see [SOURCE_IMPORT_GUIDE.md](SOURCE_IMPORT_GUIDE.md). The new [import_full_source.py](import_full_source.py) does **not** manufacture missing custom VAX files: it checks the historical `F:\build\tmp\s94` source stage against seven exact SHA-256 baselines, screens out binary media and apparent credentials, and may push a complete original source tree only to this development branch. The [PUBLISH_AND_BUILD_FROM_GIT.cmd](PUBLISH_AND_BUILD_FROM_GIT.cmd) path clones a **second clean Git checkout** and runs build-only from that checkout after successful source import.
+
+**Current state remains incomplete until that exact private/local source stage has actually been imported and the resulting Git checkout built.** The Git scripts and offline safety tests are published and checked, but neither a native build nor a hardware functional pass has been claimed.
