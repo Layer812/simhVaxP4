@@ -207,6 +207,15 @@ def main() -> int:
     try:
         original = audit_original()
         if verify_completion():
+            if args.publish:
+                # A local, uncommitted recovery must never be mistaken for
+                # successfully published Git source. Reusing this path is
+                # idempotent only when both files are tracked on remote HEAD.
+                repo = strict_repo()
+                for item in (REQUIRED, 'SOURCE_COMPLETION_MANIFEST.json'):
+                    run('git', 'cat-file', '-e',
+                        'HEAD:firmware/r80_fix28/full_project/' + item,
+                        cwd=repo)
             print('PASS all Git sources: ready for native build-only.', flush=True)
             return 0
         if args.verify:
