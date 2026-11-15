@@ -49,3 +49,26 @@ In particular, the historical **R6R30 golden recovery failed closed** because it
 Build and offline source-level regression checks may run in an isolated copy. Do not modify the protected production source tree, or ask for repeated diagnostics-only flashes. Prepare one coherent candidate and one hardware acceptance exercise after static validation passes. A newly flashed APP is **not** a production replacement until the whole relevant regression matrix passes. Record failures as failures, even if other functionality worked.
 
 **Current next action requiring local sources:** obtain the exact FIX22 and FIX27R1 source snapshots (with manifests) from the development machine. This public repository currently does not contain the firmware source needed to construct or verify a corrective patch.
+
+
+## November 15 forensic update: two distinct failure modes
+
+**Finding A — firmware host crash (recorded in FIX22 lineage and in the latest November 15 trace):** both logs contain ESP32-P4 Core 0 `Guru Meditation Error: Instruction access fault` while BSD is booting, shortly after `Changing root device to ra0a`. The reported bad host instruction fetch addresses differ (FIX22 trace `MEPC=0x7858d65a`; latest trace `MEPC=0x13fd96ce`). FIX22's later successful shell, scan, and IP acquisition occurred **after a software reboot** and therefore do not prove first-attempt or reboot stability. Match each log to its exact ELF/BIN SHA before attributing a cause.
+
+**Finding B — VAX guest stop status 4 on a later startup:** the latest trace reports `V13 BOOT_CPU returned status=4` during KA630 POST and subsequently `EVENT_GATE calls=0`. In upstream Open SIMH VAX, `STOP_ILLVEC=4` is described as `Invalid SCB vector` (`VAX/vax_defs.h`, `VAX/vax_sys.c`). In upstream `VAX/vax_cpu1.c`, `intexc()` reads `newpc = ReadLP((SCBB+vec) & (PAMASK & ~3))` and stops if `newpc & 2`. Verify these definitions against the *exact local fork*: do not treat a VAX-specific stop code 4 as the generic `SCPE_STOP`, and do not automatically retry/reboot through it. Capture offending `SCBB`, `vec`, `newpc`, guest PC and interrupt source in the corrective build's error path (not a diagnostics-only flash).
+
+**Finding C — disk validation was incomplete:** the observed R80 console reports `/sdcard/QUASWORK.DSK`, size `622932480`, `V12 RESULT=PASS`, and first 512-byte sector FNV-1a32 `c6b9e541`. It also explicitly reports `R6R3 STARTUP_DIRECT no_hash=1 no_manifest=1 no_recopy=1`. These logs do **not** establish a full-file hash or UFS filesystem consistency. An unchanged first sector does not rule out changes or damage in root filesystem sectors. Do not erase, recopy, regenerate, repair, or format either disk merely to test a hypothesis.
+
+**Finding D — resource headroom caution:** FIX22 Wi-Fi success traces also include `dma_internal_free=12` bytes in the presenter-stack log immediately before `STA GOT_IP`; this may be a dangerously small remaining DMA-capable pool, but requires the exact heap metric definition and workload context before being labeled an OOM regression.
+
+### Read-only disk forensics gate
+
+Use the offline disk audit script distributed separately with this handoff to compute full-file SHA-256 for both original and work DSK, compare all `1,216,665` 512-byte sectors, produce contiguous changed-LBA ranges, and emit bounded local-only hexadecimal byte excerpts. Confirm both images are immutable throughout reading. Compare the original image's full SHA with a trusted pinned original if available; comparing original and work alone does not prove original provenance. A changed filesystem block is not automatically corruption; UFS integrity needs a filesystem-aware read-only check after obtaining a consistent snapshot. An absent or concurrently changing DSK means **NOT CHECKED**, never PASS.
+
+### Required symbolication of host crashes
+
+Use the ELF whose SHA matches each *specific* UART crash build. Symbolicate host return addresses (`0x4006d8fe` and `0x4006d330` in the two supplied crash records) with that build's `riscv32-esp-elf-addr2line`; the invalid MEPCs themselves will generally not symbolize. Compare the resulting call sites and the QBA/RQ/XQ ownership/lifetime paths. Do not recompile a guessed source tree and use its ELF to symbolize a different flash image.
+
+### Evidence limitation
+
+These are historical UART logs and publicly available upstream reference code, not the exact local FIX22 / FIX27R1 source snapshots. No actual original/work DSK bytes, completed full-disk comparison, matching ESP-IDF ELF, or newly repaired firmware have been verified in this handoff.
