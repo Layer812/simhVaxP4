@@ -1,5 +1,5 @@
 {
-  "status": "FULL_SOURCE_PUBLISHED_NATIVE_BUILD_PATH_FIX2_UNVERIFIED",
+  "status": "GIT_BASE_IMPORTED_OMITTED_VENDOR_INL_REPAIR_GATE_PUBLISHED_BUILD_BLOCKED",
   "origin": "SIMHP4_R80_RC14_FIX28_SCB_PROVENANCE_BUILD_ONLY.zip; source candidate derived from user-supplied FIX27R1 and linked to FIX22/FIX24R1 forensic ELFs",
   "source_files": {
     "simhp4_a164_keyboard.c": "e738b8c797f7637a1f77005f056a03e6b0fa461a8a613bdb119eea4c7a2f8d9d",
@@ -49,9 +49,12 @@
       "third_party/simh_vax630_87eb/VAX/vax_cpu1.c",
       "components/M5GFX/src/lgfx/Fonts/IPA/lgfx_font_japan.c"
     ],
-    "native_esp_idf_build": "SECOND_ATTEMPT_FAILED_ESP_HOSTED_MANAGED_COMPONENTS_DESTINATION_PATH",
+    "native_esp_idf_build": "THIRD_ATTEMPT_FAILED_AFTER_1106_OF_1306_STEPS_MISSING_BMI270_config.inl",
     "physical_boot": "NOT_TESTED",
     "first_build_root_cause": "First: default Component Manager cache too long. Second: after cache shortened, default Windows Temp staged project/managed_components copy path still 265 characters (WinError 3).",
-    "applied_builder_remediation": "Short component cache F:\\build\\tmp\\r80cm plus short native build staging F:\\build\\tmp\\b28_<random>; previous failing destination 265 chars -> ~226; actual native retest pending"
+    "applied_builder_remediation": "Short component cache F:\\build\\tmp\\r80cm plus short native build staging F:\\build\\tmp\\b28_<random>; previous failing destination 265 chars -> ~226; actual native retest pending",
+    "root_cause": "Historical source import filter rejected .inl extension; original manifest lists components/M5Unified/src/utility/imu/BMI270_config.inl in excluded; component BMI270_Class.cpp includes it.",
+    "source_completion": "GIT source_completion_gate.py published; exact SHA-pinned local donor .inl one-time Git recovery required; preflight all 1777 original source file hashes and rejected compile-input extensions before build; full native retest pending",
+    "no_flash": true
   }
 }
