@@ -1,5 +1,5 @@
 {
-  "status": "FULL_SOURCE_PUBLISHED_NATIVE_BUILD_PENDING",
+  "status": "FULL_SOURCE_PUBLISHED_NATIVE_BUILD_BLOCKER_FIXED_UNVERIFIED",
   "origin": "SIMHP4_R80_RC14_FIX28_SCB_PROVENANCE_BUILD_ONLY.zip; source candidate derived from user-supplied FIX27R1 and linked to FIX22/FIX24R1 forensic ELFs",
   "source_files": {
     "simhp4_a164_keyboard.c": "e738b8c797f7637a1f77005f056a03e6b0fa461a8a613bdb119eea4c7a2f8d9d",
@@ -49,7 +49,9 @@
       "third_party/simh_vax630_87eb/VAX/vax_cpu1.c",
       "components/M5GFX/src/lgfx/Fonts/IPA/lgfx_font_japan.c"
     ],
-    "native_esp_idf_build": "NOT_YET_CONFIRMED",
-    "physical_boot": "NOT_TESTED"
+    "native_esp_idf_build": "FIRST_ATTEMPT_FAILED_ESP_HOSTED_COMPONENT_CACHE_LONG_PATH",
+    "physical_boot": "NOT_TESTED",
+    "first_build_root_cause": "Windows FileNotFoundError extracting esp_hosted 3.0.9 nested examples into long default ComponentManager cache; before C/C++ compilation",
+    "applied_builder_remediation": "IDF_COMPONENT_CACHE_PATH=F:\\build\\tmp\\r80cm (child idf.py process only); native retest pending"
   }
 }
