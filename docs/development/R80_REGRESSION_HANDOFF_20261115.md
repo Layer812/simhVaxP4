@@ -117,3 +117,15 @@ After examining the uploaded FIX22/FIX27R1 source packages and matching FIX22/FI
 - **Not yet done:** ESP-IDF native build in the user's Windows environment; hardware boot / fault recurrence test; full DSK difference and UFS consistency check.
 
 **This is not a confirmed root-cause repair or hardware-accepted build.** Do not publish binaries or merge to `main` until physical behavior and guest network functionality are demonstrated. If the fault persists, the captured vector values can distinguish spurious XQ/QBA interrupts, corrupted SCB memory and other exception transitions without changing normal timing.
+
+
+## FIX28 delivery correction — 2026-11-15
+
+**Do not request additional ZIP-download/Windows execution retries from the user.** The user reported repeatedly that the operation cannot be completed. Examination of the actual `SIMHP4_R80_RC14_FIX28_SCB_PROVENANCE_BUILD_ONLY.zip` confirms ZIP CRC integrity but finds it is **not a standalone/portable build package**, contrary to an earlier statement:
+
+- It contains only a small source-overlay plus Python staging/build scripts; it does **not** contain `project/CMakeLists.txt`, third-party compiled VAX `vax_cpu1.c`, or the full ESP-IDF project tree.
+- `RUN_RELEASE_UI.py` hardcodes `F:\\build\\tmp` as its project output root and requires a completed, SHA-matching preexisting `F:\\build\\tmp\\s94` donor-source stage, a matching ELF/BIN/build log, and `G:\\esp-idf-5.5.4`.
+- Its entry point explicitly requires Windows (`sys.platform == 'win32'`). It cannot be built by this assistant in the current container and cannot be represented as a completed native compile.
+- It is **NO FLASH**, but its standalone usability was overstated. This is a handoff blocker, not evidence of user error.
+
+**Revised plan:** Continue offline analysis from the already provided forensic source/ELF/BIN archive. Do not demand more local execution, additional diagnostics-only runs, or re-downloading the same file. Preserve exact known-good binaries and mark FIX28 as unbuilt/unverified until a genuinely reproducible build environment is available. Do not release or flash FIX28.
