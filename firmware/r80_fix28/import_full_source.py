@@ -199,7 +199,44 @@ def main() -> int:
         print('PINNED BASE VERIFIED: ' + str(root))
         repo = validate_git_checkout() if args.publish else None
         if FULL.exists():
-            raise RuntimeError('full_project already exists: refusing overwrite')
+            # A previous successful one-time publication must be idempotent.
+            # Do not overwrite, recopy, commit, or push a previously verified
+            # source tree.  An untracked/partial tree is still rejected.
+            if not FULL.is_dir() or FULL.is_symlink():
+                raise RuntimeError('full_project is not an ordinary source directory')
+            manifest_path = FULL / 'SOURCE_IMPORT_MANIFEST.json'
+            if not manifest_path.is_file() or manifest_path.is_symlink():
+                raise RuntimeError('full_project already exists without a valid import manifest; no overwrite')
+            manifest = json.loads(manifest_path.read_text('utf-8'))
+            if (manifest.get('status') != 'IMPORTED_FROM_SHA_PINNED_LOCAL_BASE'
+                    or manifest.get('donor_source_sha256') != known):
+                raise RuntimeError('existing full_project manifest does not match the exact R80 source; no overwrite')
+            included = manifest.get('included')
+            if not isinstance(included, list) or not included:
+                raise RuntimeError('existing full_project manifest is empty; no overwrite')
+            tracked = run('git', 'cat-file', '-e',
+                          'HEAD:firmware/r80_fix28/full_project/SOURCE_IMPORT_MANIFEST.json',
+                          cwd=repo, check=False) if repo else None
+            if repo and tracked.returncode != 0:
+                raise RuntimeError('full_project exists but is not committed in Git; no overwrite')
+            for rel in ('project/CMakeLists.txt', 'project/main/CMakeLists.txt',
+                        'project/main/simhp4_vax630_io_esp_r14e.c',
+                        'third_party/simh_vax630_87eb/scp.c',
+                        'third_party/simh_vax630_87eb/VAX/vax_cpu1.c'):
+                file = FULL / rel
+                if not file.is_file() or file.is_symlink():
+                    raise RuntimeError('missing published source file: ' + rel)
+            # The tracked source and manifest are immutable after checkout.
+            # Make sure the remote branch has this exact commit before
+            # declaring public source publication successful.
+            if repo:
+                local = run('git', 'rev-parse', 'HEAD', cwd=repo).stdout.strip()
+                remote = run('git', 'ls-remote', 'origin', 'refs/heads/' + BRANCH,
+                             cwd=repo).stdout.split()
+                if not remote or remote[0] != local:
+                    raise RuntimeError('local committed source is not yet the remote branch HEAD; git pull/verify first')
+            print('PASS: full_project already verified and published in Git; no re-import needed.')
+            return 0
         with tempfile.TemporaryDirectory(prefix='simhp4_source_stage_') as td:
             stage = Path(td) / 'full_project'
             included, excluded = check_tree_and_stage(root, stage)
