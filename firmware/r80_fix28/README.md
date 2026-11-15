@@ -66,3 +66,18 @@ The Git-only native-build driver now sets IDF_COMPONENT_CACHE_PATH=F:\build\tmp\
 The original build log has been preserved at C:\Users\fooba\AppData\Local\Temp\simhvaxp4_fix28_build_kw78ogvz\BUILD.log. The driver also prints the first real build error and retains a full copy at F:\build\tmp\SIMHP4_R80_FIX28_LAST_BUILD.log on subsequent runs.
 
 **Current state: Git source import PASS; ESP-IDF native build FAIL due to dependency extraction long path; corrected driver published but not yet run on Windows; hardware NOT tested.**
+
+
+## FIX28 second native build: managed_components destination path corrected (2026-11-16)
+
+The user's **second actual build log** confirms that the short Component Manager cache at F:\build\tmp\r80cm was active, but the independent native build *destination* still used the very long Windows default TEMP directory:
+C:\Users\fooba\AppData\Local\Temp\simhvaxp4_fix28_build_a1btgg4i\project\managed_components\espressif__esp_hosted\...
+
+Python Component Manager failed while copying the same deeply nested esp_hosted 3.0.9 example file with shutil.Error / WinError 3. This is not a MicroVAX C compiler error.
+
+The build-only driver now also creates a uniquely named, isolated SHORT STAGING DIRECTORY at F:\build\tmp\b28_<random>\project, while retaining the separate short component cache and the full source/patch SHA gates. A preflight calculates the previously failing managed_components target path and refuses paths >=240 chars before starting the native build. Host-only PureWindowsPath verification of the exact failure path measured:
+- Windows default TEMP build destination: **265 characters** (failed)
+- New F:\build\tmp\b28_abcdefgh destination: **226 characters**
+- Existing short component cache file: **224 characters**
+
+No VAX/QBA, M5GFX/M5Unified, BSD, LCD, Wi-Fi, CMake or flash/disk source was changed by this remediation. No Windows long-path registry changes, removal of existing caches, or modification to the separate TAb500_Improve project. Actual ESP-IDF retest and physical acceptance remain pending.
