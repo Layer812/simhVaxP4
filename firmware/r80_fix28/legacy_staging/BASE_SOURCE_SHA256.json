@@ -1,0 +1,9 @@
+{
+  "simhp4_a164_keyboard.c": "3e8334e3096d8e19fc58bb1b41e9991e06528ea6eaca9145d7258e372e27ec6c",
+  "simhp4_sim_console_esp_v14c.c": "2f59f162e2c81f9c56e3c0edcb40851aaa472420e79e7a75594394f615f1c6f2",
+  "simhp4_vax_terminal_r14f.cpp": "f2a16af23049a5d80e0ab6578f04b94cbcc33fbb227095f4bb2e4ff4982096f5",
+  "simhp4_wifi_overlay.cpp": "ce073647b0052bb0cf7393ff4da686d324c6d263afacc97579f9e27f003ebe76",
+  "simhp4_wifi_settings.c": "ecea9b5e9b559182057f6cb178570648af5ddd880e6c2a9a2ded8b35db020ca9",
+  "simhp4_wifi_settings.h": "342635d94036b69b42a29895d0845c5ceea42850f3d56fac806a95161401faec",
+  "v13_main.cpp": "dcb79371587edc77d6ae6a626d86a8c5494b4cffaca5effe8dab0f65cfb9c57a"
+}
