@@ -1,0 +1,38 @@
+@echo off
+setlocal EnableExtensions
+rem Publish SHA-verified original sources to the R80 Git development branch,
+rem fetch a clean checkout from Git and compile. Never run flash or esptool.
+set "HERE=%~dp0"
+call "%HERE%PUBLISH_SOURCE_FROM_LOCAL.cmd"
+if errorlevel 1 (
+ echo STOP: Source publication did not pass. Native build not attempted.
+ exit /b 4
+)
+set "BASE=F:\build\tmp"
+if not exist "%BASE%" (
+ echo STOP: F:\build\tmp not available.
+ exit /b 4
+)
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "STAMP=%%i"
+if not defined STAMP (
+ echo STOP: Failed to choose unique clean Git build directory.
+ exit /b 4
+)
+set "NEW=%BASE%\simhVaxP4_R80_FROM_GIT_%STAMP%"
+if exist "%NEW%" (
+ echo STOP: Destination exists. No checkout overwritten.
+ exit /b 4
+)
+git clone --single-branch --branch work/r80-regression-handoff-20261115 https://github.com/Layer812/simhVaxP4.git "%NEW%"
+if errorlevel 1 (
+ echo STOP: Clean Git checkout failed. No compile or flash.
+ exit /b 4
+)
+call "%NEW%\firmware\r80_fix28\BUILD_FROM_GIT.cmd"
+if errorlevel 1 (
+ echo BUILD FAILED OR SAFELY BLOCKED. No flash attempted.
+ exit /b 4
+)
+echo PASS: Clean Git checkout native source compilation succeeded.
+echo NO FLASH. Source revision was committed to a development branch only.
+exit /b 0
