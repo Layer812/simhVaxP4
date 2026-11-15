@@ -103,3 +103,17 @@ The user's 2026-11-15 forensic archive contains verified FIX22/FIX27R1 source ZI
 - Actual DSK bytes are still absent; prior sector-zero FNV and image-size logs cannot validate `QUASWORK.DSK` or its UFS filesystem. **No disk repair/copy/reinit and no flash.**
 
 **Engineering conclusion:** Keep the QBA map bounds protection and file-device exclusion; do not declare the full UNIT memset a root-cause fix. FIX24R1 already contains range guards, so a remaining corrupt UNIT or guest invalid SCB vector requires examination of other access paths or initialization/lifecycle interactions. Next candidate must be grounded in the complete exact local source and the matching FIX27R1 ELF, with first-boot/reboot and DSK checks separate.
+
+
+## R80 FIX28 isolated source candidate (2026-11-15, **build-only, NO FLASH**)
+
+After examining the uploaded FIX22/FIX27R1 source packages and matching FIX22/FIX24R1 ELFs, a distinct FIX28 **source-only** package was prepared. It keeps all existing FIX27R1 QBA bounds guards, QBA file exclusion, unit reset, console, LCD, A164 keyboard, Wi-Fi overlay, XQ and RQ disk behavior unchanged. Only the existing error path for the VAX `STOP_ILLVEC=4` is extended:
+
+- In the exact compiled `VAX/vax_cpu1.c` `intexc()` branch checking `newpc & 2`, preserve `ABORT(STOP_ILLVEC)` and capture `SCBB`, `vec`, `newpc`, guest PC, PSL, IPL, and exception/interrupt kind in single-event globals. No serial I/O or additional FreeRTOS tasks are inserted into normal VAX execution.
+- In `v13_main.cpp`, when `run_cmd()` returns `STOP_ILLVEC`, emit the captured values once, **without retrying/rebooting**.
+- In the fixed-source staging/build script, require a source match and a compile log for `vax_cpu1.c.obj`, require the linked capture marker in the resulting APP, and verify the APP's embedded **exact ELF SHA256**.
+- The package runner has had **all COM9/esptool/flash/write steps removed**. It outputs a matched APP.bin+ELF and actual compiled C/C++ sources to one result ZIP. It can be extracted in an arbitrary Windows folder; its output stays under `F:\build\tmp`, with isolated staging under `s114`.
+- Offline tests: package hashes/ZIP integrity PASS, unit-test C compile and normal/error-path simulated execution PASS, repeated-apply fails closed, source identity and absence of flash actions in runtime source PASS.
+- **Not yet done:** ESP-IDF native build in the user's Windows environment; hardware boot / fault recurrence test; full DSK difference and UFS consistency check.
+
+**This is not a confirmed root-cause repair or hardware-accepted build.** Do not publish binaries or merge to `main` until physical behavior and guest network functionality are demonstrated. If the fault persists, the captured vector values can distinguish spurious XQ/QBA interrupts, corrupted SCB memory and other exception transitions without changing normal timing.
