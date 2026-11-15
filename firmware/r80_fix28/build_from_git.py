@@ -93,6 +93,17 @@ def publish_build_log(log: Path, *, failed: bool) -> None:
 def main():
     if not BASE_FILE.is_file() or not PKG_FILE.is_file():
         return fail('Missing pinned FIX28 source manifests')
+    # Verify every original Git source against its import SHA-256 and require
+    # the exact donor .inl that had been silently excluded in the first import.
+    # Fail BEFORE copying 228MB of source or invoking CMake/ESP-IDF.
+    gate = HERE / 'source_completion_gate.py'
+    if not gate.is_file():
+        return fail('Git source completion auditor missing; no native build', 4)
+    print('Preflight: validate original 1,777 Git source hashes and recovered include', flush=True)
+    checked = subprocess.run([sys.executable, '-B', str(gate), '--verify'],
+                             cwd=HERE, check=False)
+    if checked.returncode != 0:
+        return fail('Git source audit did not pass; no native compilation', 4)
     expected = json.loads(PKG_FILE.read_text(encoding='utf-8'))
     for rel, digest in expected.items():
         f = (OVERLAY / rel[7:]) if rel.startswith('source/') else (LEGACY / rel)
