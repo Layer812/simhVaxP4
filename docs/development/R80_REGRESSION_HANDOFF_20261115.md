@@ -129,3 +129,14 @@ After examining the uploaded FIX22/FIX27R1 source packages and matching FIX22/FI
 - It is **NO FLASH**, but its standalone usability was overstated. This is a handoff blocker, not evidence of user error.
 
 **Revised plan:** Continue offline analysis from the already provided forensic source/ELF/BIN archive. Do not demand more local execution, additional diagnostics-only runs, or re-downloading the same file. Preserve exact known-good binaries and mark FIX28 as unbuilt/unverified until a genuinely reproducible build environment is available. Do not release or flash FIX28.
+
+
+## 2026-11-15: exact local source importer published
+
+Five new Git source files were added under `firmware/r80_fix28/`: `import_full_source.py`, `PUBLISH_SOURCE_FROM_LOCAL.cmd`, `PUBLISH_AND_BUILD_FROM_GIT.cmd`, `test_import_full_source.py` and `SOURCE_IMPORT_GUIDE.md`; `.gitattributes` preserves source bytes on Windows checkouts.
+
+These form the only documented route to publish the missing **real** ESP-IDF project, custom QBA/VAX translation unit, components and full SIMH vendor source. The importer checks seven original pre-overlay source SHA256 values under a unique `F:\build\tmp\s94` donor; rejects missing/ambiguous directories and suspicious secrets; excludes BSD DSK, NVS, ROM/media and generated binaries; and allows Git push **only to this development branch**. The companion flow then compiles from an independent freshly cloned Git checkout, never from the donor or original production source directory. No flashing actions are included.
+
+The new importer passed host-side tests for a matching fixture, wrong SHA, dry-run, DSK/BIN exclusion, suspicious password detection and refusal to overwrite an existing source tree. Hashes of all five GitHub-file blobs were confirmed against the generated originals. The real `build_from_git.py` preflight was separately exercised with all known overlay files but no complete base: it correctly returned code 4 and named all 13 blocking paths, without trying a native build.
+
+**Caveat:** The private `F:`/`G:` source directory cannot be accessed from this cloud environment. As of this update the historical full source **has not been imported**, and native ESP-IDF success, hardware regression testing and DSK integrity remain **not demonstrated**. User-side Git import requires an explicit locally executed command, which is distinct from work already completed in GitHub. Do not claim the Git-only build is complete before the full source has actually arrived.
