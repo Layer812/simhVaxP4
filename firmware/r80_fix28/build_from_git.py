@@ -90,6 +90,66 @@ def publish_build_log(log: Path, *, failed: bool) -> None:
         print('LOG READ FAILED: ' + str(exc), flush=True)
 
 
+def patch_unresolved_r79_hosted_autoinit(stage):
+    """Remove only the stale R79 glue call from the isolated build copy.
+
+    ESP-Hosted 3.0.9 already schedules its own 'eh_auto_init' worker from the
+    SDIO INIT event once TX becomes active. The pinned sdkconfig enables both
+    HOST_AUTO_FEAT_INIT and WIFI_AUTO_INIT. Running the feature walker again
+    from our Wi-Fi worker would risk duplicate/concurrent RPC registrations.
+    NEVER manufacture a dummy success return value.
+    """
+    root = stage / 'project'
+    f = root / 'main' / 'simhp4_wifi_backend.cpp'
+    config = root / 'sdkconfig'
+    component = root / 'main' / 'idf_component.yml'
+    if not f.is_file() or not config.is_file() or not component.is_file():
+        raise RuntimeError('FIX28 Wi-Fi auto-init gate missing pinned sources')
+    cfg = config.read_text(encoding='utf-8')
+    for required in ('CONFIG_ESP_HOSTED_HOST_AUTO_FEAT_INIT=y',
+                     'CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_AUTO_INIT=y'):
+        if required not in cfg.splitlines():
+            raise RuntimeError('FIX28 requires vendor Wi-Fi auto-init: ' + required)
+    if 'version: "==3.0.9"' not in component.read_text(encoding='utf-8'):
+        raise RuntimeError('FIX28 ESP-Hosted version changed; review auto-init semantics')
+    old = f.read_text(encoding='utf-8')
+    declaration = 'extern "C" int simhp4_r79_run_auto_init_on_wifi_worker(void);'
+    call = '''    /* P4: feature auto-init in existing Wi-Fi worker, never on SDIO RX. */
+    const int auto_rc=simhp4_r79_run_auto_init_on_wifi_worker();
+    if (auto_rc != 0) {
+        ESP_LOGE(LOG,"SIMHP4_R79_AUTOINIT_WORKER rc=%d",auto_rc);
+        update_state("HOSTED_AUTO_INIT",SIMHP4_WIFI_DISCONNECTED);
+        return false;
+    }
+'''
+    expected_hosted = ('esp_hosted_init()', 'esp_hosted_connect_to_slave()',
+                       'esp_netif_create_default_wifi_sta()', 'esp_wifi_init(&config)')
+    if old.count(declaration) != 1 or old.count(call) != 1:
+        raise RuntimeError('FIX28 Wi-Fi auto-init glue anchor changed; no build')
+    if any(old.count(token) != 1 for token in expected_hosted):
+        raise RuntimeError('FIX28 Hosted bring-up source changed; no build')
+    header = '''/* FIX28: ESP-Hosted 3.0.9 schedules feature auto-init on its own worker,
+ * never inline on SDIO RX. Require that exact build configuration.
+ * See host/mcu/eh_host_mcu_transport/src/eh_host_mcu_transport_init.c. */
+#include "sdkconfig.h"
+#if !defined(CONFIG_ESP_HOSTED_HOST_AUTO_FEAT_INIT) || !CONFIG_ESP_HOSTED_HOST_AUTO_FEAT_INIT || !defined(CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_AUTO_INIT) || !CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_AUTO_INIT
+#error "FIX28: ESP-Hosted Wi-Fi auto-init must remain enabled"
+#endif
+'''
+    replacement = '''    /* FIX28: no second feature-init walker. ESP-Hosted starts eh_auto_init
+     * after C6 transport INIT and TX_ACTIVE; do not run another walker here.
+     * Host init, netif/Wi-Fi setup and worker scan/Join remain unchanged. */
+'''
+    updated = old.replace(declaration, header, 1).replace(call, replacement, 1)
+    if 'simhp4_r79_run_auto_init_on_wifi_worker' in updated:
+        raise RuntimeError('FIX28 stale undefined R79 symbol remains')
+    for required in expected_hosted:
+        if updated.count(required) != 1:
+            raise RuntimeError('FIX28 Wi-Fi Hosted bring-up was modified: ' + required)
+    f.write_text(updated, encoding='utf-8')
+    print('PASS FIX28: stale undefined R79 Wi-Fi init glue removed in isolated build only; vendor auto-init retained', flush=True)
+
+
 def main():
     if not BASE_FILE.is_file() or not PKG_FILE.is_file():
         return fail('Missing pinned FIX28 source manifests')
@@ -189,6 +249,7 @@ def main():
         for patch in (module.patch_actual_qba, module.patch_qba_file_metadata,
                       module.patch_scb_fault_provenance):
             patch(stage)
+        patch_unresolved_r79_hosted_autoinit(stage)
         run = [sys.executable, str(idf_py), '-B', str(stage / 'project' / 'build'), 'build']
         log = stage / 'BUILD.log'
         print('ESP-IDF build only: ' + ' '.join(run))
