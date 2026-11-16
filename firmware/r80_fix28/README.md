@@ -119,3 +119,32 @@ Root cause: the nested Open SIMH .gitattributes explicitly assigns .gitattribute
 Use the existing Git checkout directly, without repeating donor upload or fresh clone:
 
     git -C F:\build\tmp\simhVaxP4_R80_GIT_SOURCE pull --ff-only && call F:\build\tmp\simhVaxP4_R80_GIT_SOURCE\firmware\r80_fix28\BUILD_FROM_GIT.cmd
+
+
+## 2026-11-16 — FIX28 native link error (real build step 1304/1306)
+
+User-provided native Git-only build log confirms:
+- All 1,777 original source SHA-256 checks passed, and the restored 50,510-byte BMI270_config.inl passed.
+- ESP-IDF compiled through step **1304/1306**, then the final ELF link failed with exactly this unresolved symbol called by project/main/simhp4_wifi_backend.cpp:
+  undefined reference to simhp4_r79_run_auto_init_on_wifi_worker
+
+**Source-level evidence and rationale**
+- The source declares this R79 hook but includes no compiled definition. It invokes the hook after esp_hosted_init() and esp_hosted_connect_to_slave(), before esp_netif_create_default_wifi_sta() and esp_wifi_init().
+- The SHA-pinned project's sdkconfig explicitly enables CONFIG_ESP_HOSTED_HOST_AUTO_FEAT_INIT=y and CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_AUTO_INIT=y. Its component manifest pins espressif/esp_hosted version ==3.0.9 and esp_wifi_remote ==1.6.5.
+- Espressif's exact ESP-Hosted v3.0.9 source at host/mcu/eh_host_mcu_transport/src/eh_host_mcu_transport_init.c already starts the dedicated eh_auto_init worker after receiving CP INIT and flipping transport to TX_ACTIVE. host/features/eh_host_feat_wifi/src/eh_host_feat_wifi.c already registers the Wi-Fi feature for automatic initialization.
+- Adding a fake return-0 function would be misleading. Calling the feature registry a second time could duplicate/race initialization.
+
+**Minimal guarded build fix**
+build_from_git.py now removes only this stale R79 declaration and call **inside the isolated FIX28 staging tree**. The Git full_project original source, its pinned SHA-256 manifest, all FIX28 QBA/SCB patches, LCD, BSD networking, radio, SDIO, UI and Wi-Fi worker logic are preserved unchanged. Before applying the patch, it requires:
+1. The historical declaration and entire call block each occur exactly once.
+2. Four key ESP-Hosted/netif/Wi-Fi init operations occur exactly once and remain unchanged afterward.
+3. The two vendor feature auto-init flags are enabled in the pinned sdkconfig and the dependency is still exactly esp_hosted 3.0.9.
+4. Any source/config/version drift stops before native compilation.
+
+Companion test_wifi_r79_link_gate.py is published and tests removal, unchanged major Wi-Fi calls, rejection of duplicate patch, changed source, disabled auto-init and changed component version. Static inspection of the Git historical files and transformation anchors passed. **An actual native compile of this revision has NOT been run in this assistant environment.**
+
+Do not use a second auto-init or a dummy definition; do not claim guest qe0 packet forwarding, hardware Wi-Fi reconnect, or physical BSD acceptance without logs. NO FLASH / NO COM9 / NO DSK / NO NVS, main unchanged.
+
+**Existing-checkout, Git-only build command:**
+
+    git -C F:\build\tmp\simhVaxP4_R80_GIT_SOURCE pull --ff-only && call F:\build\tmp\simhVaxP4_R80_GIT_SOURCE\firmware\r80_fix28\BUILD_FROM_GIT.cmd
