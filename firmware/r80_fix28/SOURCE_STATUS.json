@@ -1,5 +1,5 @@
 {
-  "status": "GIT_SOURCE_PLUS_BMI270_INL_PUBLISHED_VENDOR_EOL_AUDIT_FIXED_NATIVE_BUILD_PENDING",
+  "status": "GIT_SOURCE_COMPLETE_FIX28_R79_HOSTED_AUTOINIT_LINK_FIX_PUBLISHED_UNBUILT",
   "origin": "SIMHP4_R80_RC14_FIX28_SCB_PROVENANCE_BUILD_ONLY.zip; source candidate derived from user-supplied FIX27R1 and linked to FIX22/FIX24R1 forensic ELFs",
   "source_files": {
     "simhp4_a164_keyboard.c": "e738b8c797f7637a1f77005f056a03e6b0fa461a8a613bdb119eea4c7a2f8d9d",
@@ -49,13 +49,13 @@
       "third_party/simh_vax630_87eb/VAX/vax_cpu1.c",
       "components/M5GFX/src/lgfx/Fonts/IPA/lgfx_font_japan.c"
     ],
-    "native_esp_idf_build": "NOT_RERUN_AFTER_CANONICAL_GIT_EOL_GATE_FIX",
+    "native_esp_idf_build": "LAST_NATIVE_BUILD_LINK_FAILED_STEP_1304_OF_1306_UNDEFINED_simhp4_r79_run_auto_init_on_wifi_worker",
     "physical_boot": "NOT_TESTED",
     "first_build_root_cause": "First: default Component Manager cache too long. Second: after cache shortened, default Windows Temp staged project/managed_components copy path still 265 characters (WinError 3).",
-    "applied_builder_remediation": "Short component cache F:\\build\\tmp\\r80cm plus short native build staging F:\\build\\tmp\\b28_<random>; previous failing destination 265 chars -> ~226; actual native retest pending",
+    "applied_builder_remediation": "Fixed Windows paths and missing .inl; added isolated guarded elimination of stale custom R79 auto-init call (3.0.9 has built-in eh_auto_init worker); no original source changes",
     "root_cause": "Historical source import filter rejected .inl extension; original manifest lists components/M5Unified/src/utility/imu/BMI270_config.inl in excluded; component BMI270_Class.cpp includes it.",
     "source_completion": "BMI270_config.inl 50,510 bytes SHA256 59c1d9d3c876fa332a298ca404024a9375d7a926bcac71a00d385e6d022fb142 was committed/pushed as dba0d27; subsequent Windows fresh clone stopped at .gitattributes original hash mismatch caused by text=auto CRLF checkout. Source gate now verifies canonical Git blob SHA256 plus exact LF->CRLF only; Windows native rerun pending",
     "no_flash": true,
-    "latest_validation": "Host-side Git simulated CRLF accepted; changed working source and changed Git blob rejected; actual Windows audit not yet confirmed"
+    "latest_validation": "Original 1777 Git SHA files and exact BMI270 included PASS; ESP-Hosted 3.0.9 automatic Wi-Fi feature-init verified enabled in sdkconfig; stale undefined R79 hook removed in isolated build only; actual new native compile pending"
   }
 }
