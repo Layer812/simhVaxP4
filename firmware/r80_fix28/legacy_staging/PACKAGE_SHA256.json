@@ -1,0 +1,13 @@
+{
+  "BASE_SOURCE_SHA256.json": "5d256261c370479aebe105f8d0b36580cabe5667b2affc875a97750f576255d3",
+  "R80_FIX11_FLASH_CORE.py": "5bb53ab2b8fb14cf8dfec505804dd3b5066153b0a5bd6bbee49d1961a529cf69",
+  "R80_REV9_BINARY_PATCH.py": "64d3ba1b70c87c710cee150e631d5bc5cafb8709284e5bb3f6ad48999d85bdaa",
+  "RUN_RELEASE_UI.py": "bd419cecd27a00a4c1a89a1901e549ea9e077161279b290fc0c7f058a8f14009",
+  "source/simhp4_a164_keyboard.c": "e738b8c797f7637a1f77005f056a03e6b0fa461a8a613bdb119eea4c7a2f8d9d",
+  "source/simhp4_sim_console_esp_v14c.c": "aa61719f4fc9f7d665c2070fa8b9f629e43c659b0a5a5dfd39128c0c5c999cf6",
+  "source/simhp4_vax_terminal_r14f.cpp": "c5449f3f3234df28618dcf325296f79e80b9c89d232252eb6b77da70709a1ea8",
+  "source/simhp4_wifi_overlay.cpp": "015099c385795debddd1b8a7144787cf668b15e900d3b586b7a452d8d37c7a93",
+  "source/simhp4_wifi_settings.c": "ea5d0b49f82622985efd78b73891ed07fba8cab10c88b2582d0b016f04609386",
+  "source/simhp4_wifi_settings.h": "c17b6fb9abfebbf743385168ce09c2e8e46c39aab8279e4fd5994623ecf3c5d2",
+  "source/v13_main.cpp": "54e93a92d58ee2c662c26a1554566a7940f38c66e2502801eed3b80f88de8c95"
+}

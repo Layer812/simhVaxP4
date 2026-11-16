@@ -1,0 +1,75 @@
+﻿
+==============================================================================
+simhP4 V12D LINK/RAM EVIDENCE COLLECTION
+==============================================================================
+DATE        : 2026-10-05 14:31:09 +09:00
+PROJECT ROOT: G:\simhP4\vax630_visual_media_probe_v12
+BUILD DIR   : G:\simhP4\vax630_visual_media_probe_v12\build
+OUTPUT DIR  : G:\simhP4\vax630_visual_media_probe_v12\V12D_EVIDENCE_20261005-143109
+MODE        : collection only / no judgment / no source modification
+
+==============================================================================
+PATH EXISTENCE
+==============================================================================
+PROJECT EXISTS: True
+BUILD EXISTS  : True
+
+==============================================================================
+TOOL DISCOVERY
+==============================================================================
+NM      : C:\Users\fooba\.espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin\riscv32-esp-elf-nm.exe
+SIZE    : C:\Users\fooba\.espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin\riscv32-esp-elf-size.exe
+OBJDUMP : C:\Users\fooba\.espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin\riscv32-esp-elf-objdump.exe
+READELF : C:\Users\fooba\.espressif\tools\riscv32-esp-elf\esp-14.2.0_20260121\riscv32-esp-elf\bin\riscv32-esp-elf-readelf.exe
+
+==============================================================================
+BUILD ARTIFACT CENSUS
+==============================================================================
+MAP FILES : 2
+ELF FILES : 1
+OBJECTS   : 1198
+ARCHIVES  : 111
+
+==============================================================================
+LINKER MAP COLLECTION
+==============================================================================
+
+==============================================================================
+PDP11_RQ OBJECT TARGETED COLLECTION
+==============================================================================
+pdp11_rq object matches: 1
+
+==============================================================================
+ALL OBJECT STATIC RAM SECTION CENSUS
+==============================================================================
+OBJECT SCAN PROGRESS: 250 / 1198
+OBJECT SCAN PROGRESS: 500 / 1198
+OBJECT SCAN PROGRESS: 750 / 1198
+OBJECT SCAN PROGRESS: 1000 / 1198
+OBJECT RAM CENSUS ROWS: 1198
+
+==============================================================================
+ELF SYMBOL COLLECTION IF ANY ELF EXISTS
+==============================================================================
+
+==============================================================================
+ARCHIVE CENSUS
+==============================================================================
+
+==============================================================================
+RQ / M5 / SIMCORE OBJECT NAME INDEX
+==============================================================================
+FOCUS OBJECTS: 1198
+
+==============================================================================
+PROJECT SOURCE FINGERPRINT SNAPSHOT
+==============================================================================
+
+==============================================================================
+COLLECTION COMPLETE
+==============================================================================
+No source files were patched.
+No build was started.
+No flash was started.
+No pass/fail judgment was made.
+RESULT DIRECTORY: G:\simhP4\vax630_visual_media_probe_v12\V12D_EVIDENCE_20261005-143109

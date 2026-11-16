@@ -1,0 +1,3 @@
+simhP4 MicroVAX II source pin
+open_simh_commit=87eb7d5e96f9ce0ee6ac183e20160e5c486b0712
+critical_git_blobs=verified

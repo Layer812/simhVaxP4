@@ -1,0 +1,4 @@
+# Preserve source byte identity across Windows core.autocrlf settings.
+source/** -text
+legacy_staging/** -text
+full_project/** -text

@@ -1,0 +1,3 @@
+﻿ELF   : G:\simhP4\vax630_visual_media_probe_v12\build\bootloader\bootloader.elf
+BYTES : 731156
+MTIME : 2026-10-04T23:00:12.4770380+09:00
